@@ -43,7 +43,11 @@ bal_cohort_anthra = bal_cohort_info %>%
   mutate(anthracosis_group=ifelse(percent_anthracosis>=median_anthracosis_percent,"High","0Low"))
 bal_df = bal_df[,bal_cohort_anthra$id_for_scan]
 
-
+bal_cohort_anthra %>%
+  ggplot(aes(x=smoking,y=percent_anthracosis)) +
+  ggbeeswarm::geom_quasirandom() +
+  stat_compare_means() +
+  theme_cowplot()
 
 pheno = bal_cohort_anthra %>%
   mutate(condition=anthracosis_group) %>%
@@ -135,8 +139,31 @@ sig_genes <- rownames(res[
 
 all_results_df = full_join(limma_res_df,cor_res_df,by="gene_name")
 
+spearman_dataset_result = all_results_df %>%
+  mutate(Significance=ifelse(spearman_p<0.05&spearman_FDR<0.1,"p-value<0.05; FDR<0.1","None")) %>%
+  mutate(Significance=ifelse(spearman_FDR<0.05&spearman_FDR<0.05,"p-value<0.05; FDR<0.05",Significance)) %>%
+  mutate(gene_name_lab=ifelse(spearman_FDR<0.05,gene_name,"")) %>%
+  arrange(spearman_cor.rho) %>%
+  mutate(gene_name = factor(gene_name, levels = gene_name)) %>%
+  ggplot(aes(x = spearman_cor.rho, y = gene_name, color = Significance)) +
+  geom_segment(aes(x = 0, xend = spearman_cor.rho, yend = gene_name)) +
+  geom_point(size = 2) +
+  ggrepel::geom_text_repel(aes(label=gene_name_lab),    force = 5,                 # default is 1
+                           point.padding = 0.5,       # distance from point
+                           box.padding = 0.7,         # distance between labels
+                           min.segment.length = 0,    # always draw segments
+                           max.overlaps = Inf) +
+  theme_cowplot() +
+  labs(x = "Spearman ρ", y = "Gene Name") +
+  scale_color_manual(values=c("grey","red3","salmon")) +
+  theme(
+    axis.text.x=element_blank(),
+    axis.ticks.x=element_blank()
+  ) +
+  coord_flip()
+
+
 all_results_sig = all_results_df %>%
-  # filter(signif(limma_adj.P.Val,1)<=0.1&abs(limma_logFC)>=2.5&spearman_p<0.05) %>%
   filter(spearman_FDR<0.05)
 
 norm_counts_df = norm_counts %>%
@@ -145,12 +172,12 @@ norm_counts_df = norm_counts %>%
   rename(sample_name = X2)
 
 
-norm_counts_df %>%
+correlation_plots = norm_counts_df %>%
   left_join(.,bal_cohort_anthra,by=c("sample_name"="id_for_scan")) %>%
   filter(gene_name%in%all_results_sig$gene_name) %>%
   ggplot(aes(y=percent_anthracosis,x=value)) +
   geom_point() +
-  facet_wrap(~gene_name,scales="free") +
+  facet_wrap(~gene_name,scales="free",nrow=1) +
   stat_cor(method = "spearman", 
            label.x.npc = "left", 
            label.y.npc = "top") +
@@ -175,4 +202,62 @@ glm_res_df = bind_rows(glm_res_df)
 
 glm_res_anthracosis_df = glm_res_df %>%
   filter(term=="percent_anthracosis")
+
+
+
+
+
+#  FGSEA
+
+nanostring_annotations = fread("annnotations/nanostring/LBL-10043-08_nCounter_PanCancer_Immune_Profiling_Panel_Gene_List_annotations.csv") %>%
+  janitor::clean_names()
+
+pathways <- nanostring_annotations %>%
+  filter(!is.na(annotation)) %>%
+  separate_rows(.,annotation,sep=", ") %>%
+  filter(annotation!="",annotation!="Cell Type specific") %>%
+  group_by(annotation) %>%
+  summarise(genes = list(unique(gene_name))) %>%
+  tibble::deframe()
+
+library(fgsea)
+ranks = all_results_df$spearman_cor.rho
+names(ranks) = all_results_df$gene_name
+ranks <- sort(ranks, decreasing = TRUE)
+
+fg <- fgsea(
+  pathways = pathways,
+  stats = ranks,
+  minSize = 5,
+  maxSize = 200
+)
+
+fg %>%
+  ggplot(aes(x=NES,y=-log(padj))) +
+  geom_point(aes(size=log2err)) +
+  ggrepel::geom_label_repel(aes(label=pathway))
+
+pathway_order = fg %>%
+  arrange(NES) %>%
+  pull(pathway)
+
+top_pathways = c(head(pathway_order,n=5),tail(pathway_order,n=5))
+
+pathway_enrichment_plot = fg %>%
+  mutate(Significance=ifelse(pval<0.05&padj<0.1,"p-value<0.05; FDR<0.1","None")) %>%
+  mutate(Significance=ifelse(pval<0.05&padj<0.05,"p-value<0.05; FDR<0.05",Significance)) %>%
+  filter(pathway%in%top_pathways) %>%
+  mutate(direction=factor(ifelse(NES>0,"Activated","Suppressed"),levels=c("Suppressed","Activated"))) %>%
+  mutate(pathway=factor(pathway,levels=pathway_order)) %>%
+  ggplot(aes(x = NES, y = pathway, fill = Significance, size = size)) +
+  geom_point(pch=21, color='black') +
+  scale_fill_manual(values=c("grey","salmon")) +
+  facet_grid(~direction, scales="free_x", space="free_y") +
+  labs(x = "fgsea Normalized enrichment score", y = "Gene Set") 
+  
+( ((plot_spacer() | spearman_dataset_result) + plot_layout(widths=c(2,2))) / 
+    correlation_plots / 
+    (plot_spacer() | pathway_enrichment_plot) ) +
+  plot_layout(heights=c(2,2,2))
+
 
