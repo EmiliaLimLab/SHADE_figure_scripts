@@ -1,0 +1,16 @@
+﻿study_ID,nodule diagnosis,age,sex,lobe (for both slide and BAL),smoking,pack years,tissue area,area of anthracosis,anth_percent
+BAL_1,adenocarcinoma,69,F,RUL,former,15,70273974.3,52511.9465,0.0747246
+BAL_2,adenocarcinoma,82,M,RLL,never,NA,92998887.5,207276.8172,0.222880964
+BAL_3,adenocarcinoma,79,F,RUL,former,2,72249206.4,76648.3582,0.106088858
+BAL_4,adenocarcinoma,81,F,LLL,former,no data,63416049.1,19564.0255,0.030850275
+BAL_5,adenocarcinoma,61,M,RUL,former,5-10 cigarettes per day for 3 weeks,94088868.6,30864.2912,0.03280334
+BAL_6,adenocarcinoma,61,M,LUL,never,NA,85383360.3,48474.2137,0.056772436
+BAL_7,benign (fibrosing interstitial pneumonia),70,M,RLL,former,5,95971855.9,2787.6492,0.002904653
+BAL_8,benign (calcified scar and foamy macrophages),76,F,LLL,former,no data,43167085.6,36134.5758,0.08370863
+BAL_9,adenocarcinoma,58,F,LUL,never,NA,118035225.2,13639.3941,0.011555359
+BAL_10,adenocarcinoma,74,F,LUL,never,NA,53413221.3,39430.3801,0.073821386
+BAL_11,adenocarcinoma,54,F,LLL,never,NA,72423330.4,72178.2875,0.099661652
+BAL_12,adenocarcinoma,67,M,RUL,former,50,75649738.7,67164.9758,0.088784148
+BAL_13,adenocarcinoma,73,F,LUL,former,40,80410668.2,65253.7898,0.081150662
+BAL_14,adenocarcinoma,60,F,RLL,never,NA,121060548.1,53656.3312,0.044321897
+BAL_15,adenocarcinoma,70,M,RUL,former,50,166646264.1,68126.7289,0.040881042
