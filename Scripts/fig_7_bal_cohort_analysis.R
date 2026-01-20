@@ -8,50 +8,50 @@ library(cowplot)
 library(ggpubr)
 
 # LUCAS: For these 2 input files, can we just include data for the 15 cases included.
-bal_data = fread("data/nanostringdata_matchedtoscans.csv")
-bal_cohort_info = readxl::read_xlsx("data/clinicalforBALmatchedslide_deID.xlsx") %>%
+bal_data = readxl::read_xlsx("../Cohort_data/BAL_nanostringdata.xlsx")
+bal_cohort_info = fread("../Cohort_data/BAL_Cohort.csv") %>%
   janitor::clean_names() %>%
   mutate(smoking=ifelse(smoking%in%c("minimal","former"),"EverSmoked",smoking))%>%
   mutate(smoking=ifelse(smoking%in%c("never"),"NeverSmoked",smoking)) %>%
   mutate(lobe_for_both_slide_and_bal=ifelse(lobe_for_both_slide_and_bal%in%c("RUL","LUL"),"UpperLobe",lobe_for_both_slide_and_bal)) %>%
   mutate(lobe_for_both_slide_and_bal=ifelse(lobe_for_both_slide_and_bal%in%c("RLL","LLL"),"LowerLobe",lobe_for_both_slide_and_bal))
 
-bal_anthracosis_df = fread("data/BAL_anthracosis_measurements.csv")%>%
-  janitor::clean_names() %>%
-  filter(!image%in%c("BAL_21_N.ndpi","BAL_25_N.ndpi"))
+# bal_anthracosis_df = fread("data/BAL_anthracosis_measurements.csv")%>%
+#   janitor::clean_names() %>%
+#   filter(!image%in%c("BAL_21_N.ndpi","BAL_25_N.ndpi"))
 
-bal_anthracosis_calls_df = bal_anthracosis_df %>%
-  filter(classification=="Anthracosis") %>%
-  mutate(id_for_scan=gsub("_N.ndpi","",image)) %>%
-  mutate(percent_anthracosis=percent) %>%
-  select(id_for_scan,percent_anthracosis)
+# bal_anthracosis_calls_df = bal_anthracosis_df %>%
+#   filter(classification=="Anthracosis") %>%
+#   mutate(id_for_scan=gsub("_N.ndpi","",image)) %>%
+#   mutate(percent_anthracosis=percent) %>%
+#   select(id_for_scan,percent_anthracosis)
 
-bal_df = as.matrix(bal_data[,20:37])
+bal_df = as.matrix(bal_data[,11:25])
 rownames(bal_df) = bal_data$ProbeName
 
-bal_cohort_info = bal_cohort_info %>%
-  left_join(.,bal_anthracosis_calls_df,by="id_for_scan") %>%
-  filter(id_for_scan%in%colnames(bal_df))
+# bal_cohort_info = bal_cohort_info %>%
+#   left_join(.,bal_anthracosis_calls_df,by="id_for_scan") %>%
+#   filter(id_for_scan%in%colnames(bal_df))
 
 median_anthracosis_percent = bal_cohort_info %>%
-  filter(!is.na(percent_anthracosis)) %>%
-  pull(percent_anthracosis) %>%
+  filter(!is.na(anth_percent)) %>%
+  pull(anth_percent) %>%
   median()
 
 bal_cohort_anthra = bal_cohort_info %>%
-  filter(!is.na(percent_anthracosis)) %>%
-  mutate(anthracosis_group=ifelse(percent_anthracosis>=median_anthracosis_percent,"High","0Low"))
-bal_df = bal_df[,bal_cohort_anthra$id_for_scan]
+  filter(!is.na(anth_percent)) %>%
+  mutate(anthracosis_group=ifelse(anth_percent>=median_anthracosis_percent,"High","Low"))
+fbal_df = bal_df[,bal_cohort_anthra$study_id]
 
 bal_cohort_anthra %>%
-  ggplot(aes(x=smoking,y=percent_anthracosis)) +
+  ggplot(aes(x=smoking,y=anth_percent)) +
   ggbeeswarm::geom_quasirandom() +
   stat_compare_means() +
   theme_cowplot()
 
 pheno = bal_cohort_anthra %>%
   mutate(condition=anthracosis_group) %>%
-  select(id_for_scan,condition) %>%
+  select(condition) %>%
   data.frame()
 rownames(pheno) = bal_cohort_anthra$id_for_scan
 
@@ -70,6 +70,7 @@ hk_genes <- setdiff(
 )
 
 # Background Correction
+
 neg_means <- colMeans(counts[neg_ctrls, , drop = FALSE])
 neg_sds   <- apply(counts[neg_ctrls, , drop = FALSE], 2, sd)
 
@@ -106,7 +107,7 @@ fit <- eBayes(fit)
 
 res <- topTable(
   fit,
-  coef = "conditionHigh",  # change to your contrast
+  coef = "conditionLow",  # change to your contrast
   number = Inf,
   adjust.method = "BH"
 )
@@ -117,8 +118,8 @@ limma_res_df$gene_name = rownames(res)
 
 
 #  Correlation Test
-anthracosis <- bal_cohort_anthra$percent_anthracosis
-names(anthracosis) = bal_cohort_anthra$id_for_scan
+anthracosis <- bal_cohort_anthra$anth_percent
+names(anthracosis) = bal_cohort_anthra$study_id
 anthracosis = anthracosis[ colnames(norm_counts)]
 
 cor_results <- apply(norm_counts, 1, function(gene_exp) {
@@ -173,9 +174,9 @@ norm_counts_df = norm_counts %>%
 
 
 correlation_plots = norm_counts_df %>%
-  left_join(.,bal_cohort_anthra,by=c("sample_name"="id_for_scan")) %>%
+  left_join(.,bal_cohort_anthra,by=c("sample_name"="study_id")) %>%
   filter(gene_name%in%all_results_sig$gene_name) %>%
-  ggplot(aes(y=percent_anthracosis,x=value)) +
+  ggplot(aes(y=anth_percent,x=value)) +
   geom_point() +
   facet_wrap(~gene_name,scales="free",nrow=1) +
   stat_cor(method = "spearman", 
@@ -191,9 +192,9 @@ gene_names = unique(norm_counts_df$gene_name)
 glm_res_df = lapply(gene_names,function(x){
   tt_df = norm_counts_df %>%
     filter(gene_name==x) %>%
-    left_join(.,bal_cohort_anthra,by=c("sample_name"="id_for_scan"))
+    left_join(.,bal_cohort_anthra,by=c("sample_name"="study_id"))
   
-  g_res_df = glm(value~percent_anthracosis+age+sex+smoking+lobe_for_both_slide_and_bal,data=tt_df) %>%
+  g_res_df = glm(value~anth_percent+age+sex+smoking+lobe_for_both_slide_and_bal,data=tt_df) %>%
     broom::tidy()
   g_res_df$variable = x
   g_res_df
@@ -201,16 +202,19 @@ glm_res_df = lapply(gene_names,function(x){
 glm_res_df = bind_rows(glm_res_df)
 
 glm_res_anthracosis_df = glm_res_df %>%
-  filter(term=="percent_anthracosis")
+  filter(term=="anth_percent")
 
 
 
 
 
 #  FGSEA
+# https://nanostring.com/ncounterfiles/ for annotations
 
-nanostring_annotations = fread("annnotations/nanostring/LBL-10043-08_nCounter_PanCancer_Immune_Profiling_Panel_Gene_List_annotations.csv") %>%
-  janitor::clean_names()
+nanostring_annotations= fread("../Cohort_data/LBL-10043-08_nCounter_PanCancer_Immune_Profiling_Panel_Gene_List_Annotations.csv")
+colnames(nanostring_annotations) <- as.character(nanostring_annotations[2,])
+nanostring_annotations=nanostring_annotations[-c(1,2),] %>%
+janitor::clean_names()
 
 pathways <- nanostring_annotations %>%
   filter(!is.na(annotation)) %>%
@@ -228,7 +232,7 @@ ranks <- sort(ranks, decreasing = TRUE)
 fg <- fgsea(
   pathways = pathways,
   stats = ranks,
-  minSize = 5,
+  minSize = 6,
   maxSize = 200
 )
 
@@ -255,7 +259,7 @@ pathway_enrichment_plot = fg %>%
   facet_grid(~direction, scales="free_x", space="free_y") +
   labs(x = "fgsea Normalized enrichment score", y = "Gene Set") 
   
-( ((plot_spacer() | spearman_dataset_result) + plot_layout(widths=c(2,2))) / 
+figure_7 <- ( ((plot_spacer() | spearman_dataset_result) + plot_layout(widths=c(2,2))) / 
     correlation_plots / 
     (plot_spacer() | pathway_enrichment_plot) ) +
   plot_layout(heights=c(2,2,2))
