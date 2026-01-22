@@ -1,2 +1,3 @@
-# Figure_script
-Repository containing the scripts and data files for the manuscript titled: Automated Quantification of Anthracotic Pigment in Normal Lung Tissue from Lung Cancer Patients
+# Clinical and Molecular Correlates of Digitally Quantified Anthracosis in Lung Tissue Slides: Utility of an Automated Quantitative Workflow - Data Analysis
+
+This is the repository for the raw data and scripts used for data analysis in the manuscript titled: Clinical and Molecular Correlates of Digitally Quantified Anthracosis in Lung Tissue Slides: Utility of an Automated Quantitative Workflow.
