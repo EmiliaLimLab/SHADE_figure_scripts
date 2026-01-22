@@ -15,22 +15,8 @@ bal_cohort_info = fread("../Cohort_data/BAL_Cohort.csv") %>%
   mutate(lobe_for_both_slide_and_bal=ifelse(lobe_for_both_slide_and_bal%in%c("RUL","LUL"),"UpperLobe",lobe_for_both_slide_and_bal)) %>%
   mutate(lobe_for_both_slide_and_bal=ifelse(lobe_for_both_slide_and_bal%in%c("RLL","LLL"),"LowerLobe",lobe_for_both_slide_and_bal))
 
-# bal_anthracosis_df = fread("data/BAL_anthracosis_measurements.csv")%>%
-#   janitor::clean_names() %>%
-#   filter(!image%in%c("BAL_21_N.ndpi","BAL_25_N.ndpi"))
-
-# bal_anthracosis_calls_df = bal_anthracosis_df %>%
-#   filter(classification=="Anthracosis") %>%
-#   mutate(id_for_scan=gsub("_N.ndpi","",image)) %>%
-#   mutate(percent_anthracosis=percent) %>%
-#   select(id_for_scan,percent_anthracosis)
-
 bal_df = as.matrix(bal_data[,11:25])
 rownames(bal_df) = bal_data$ProbeName
-
-# bal_cohort_info = bal_cohort_info %>%
-#   left_join(.,bal_anthracosis_calls_df,by="id_for_scan") %>%
-#   filter(id_for_scan%in%colnames(bal_df))
 
 median_anthracosis_percent = bal_cohort_info %>%
   filter(!is.na(anth_percent)) %>%
