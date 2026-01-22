@@ -8,7 +8,7 @@ library(patchwork)
 library(broom)
 
 # Never-Smoking Cohort - FIGURE 4 Analysis
-shade_data = fread("../Cohort_data/LCINS_Cohort.csv") %>%
+shade_data = fread("../Cohort_data/Never_smoking_Cohort.csv") %>%
   janitor::clean_names() %>%
   mutate(birth_region = ifelse(birth_continent%in%c("Asia"),birth_continent,"Other")) %>%
   mutate(birth_region = ifelse(birth_continent%in%c(""),NA,birth_region)) %>%
