@@ -7,8 +7,7 @@ library(cowplot)
 library(patchwork)
 library(broom)
 
-
-# LUCAS: For the version we upload: please remove columns that are not used in analysis 
+# Never-Smoking Cohort - FIGURE 4 Analysis
 shade_data = fread("../Cohort_data/LCINS_Cohort.csv") %>%
   janitor::clean_names() %>%
   mutate(birth_region = ifelse(birth_continent%in%c("Asia"),birth_continent,"Other")) %>%
@@ -278,8 +277,8 @@ suppl_figure <- (((pm25_3yr_plot | egfr_plot | ethnicity_plot) +
 ) +
   plot_annotation(tag_levels = "A") 
 
-#  Smoker Cohort
-ever_smoker_data_df = fread("data/current_former_smoker_clindat_deID.csv") %>%
+#  Smoking Cohort - FIGURE 5 Analysis
+ever_smoker_data_df = fread("data/Smoking_Cohort.csv") %>%
   janitor::clean_names() %>%
   mutate(smoking_status = smoking) %>%
   select(slide_id,age,sex,pack_year,smoking_status,upper_vs_lower,anth_percent)
