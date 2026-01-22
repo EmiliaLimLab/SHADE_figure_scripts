@@ -7,7 +7,6 @@ library(patchwork)
 library(cowplot)
 library(ggpubr)
 
-# LUCAS: For these 2 input files, can we just include data for the 15 cases included.
 bal_data = readxl::read_xlsx("../Cohort_data/BAL_nanostringdata.xlsx")
 bal_cohort_info = fread("../Cohort_data/BAL_Cohort.csv") %>%
   janitor::clean_names() %>%
@@ -259,7 +258,7 @@ pathway_enrichment_plot = fg %>%
   facet_grid(~direction, scales="free_x", space="free_y") +
   labs(x = "fgsea Normalized enrichment score", y = "Gene Set") 
   
-figure_7 <- ( ((plot_spacer() | spearman_dataset_result) + plot_layout(widths=c(2,2))) / 
+figure_6 <- ( ((plot_spacer() | spearman_dataset_result) + plot_layout(widths=c(2,2))) / 
     correlation_plots / 
     (plot_spacer() | pathway_enrichment_plot) ) +
   plot_layout(heights=c(2,2,2))
