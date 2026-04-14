@@ -236,6 +236,22 @@ stage_plot = shade_for_analysis %>%
   ylab("% Anthracosis") +
   xlab("Tumour Stage")
 
+pleura_plot = shade_for_analysis %>%
+  filter(!is.na(pleura_present)) %>%
+  ggplot(aes(x=pleura_present,y=anth_percent)) +
+  ggbeeswarm::geom_quasirandom() +
+  stat_compare_means(method="wilcox.test", size = 4.5) +
+  theme_cowplot() +
+  stat_summary(
+    fun = median,
+    fun.min = median,
+    fun.max = median,
+    geom = "crossbar", color="blue",
+    width = 0.7,   
+  )+
+  ylab("% Anthracosis") +
+  xlab("Pleura Present")
+
 #  Regression to identify relative associations of anthracosis levels across variables
 all_res_df %>%
   filter(p.adj<=0.1)
@@ -272,8 +288,10 @@ main_figure <- (((age_plot | age_plot ) + plot_layout(widths=c(2,1))) /
 # SUPPLEMENTARY FIGURE
 suppl_figure <- (((pm25_3yr_plot | egfr_plot | ethnicity_plot) + 
     plot_layout(guides="collect", widths=c(1,1,2))) / 
-    ((stage_plot | lobe_plot | subtype_plot) +
-       plot_layout(guides="collect", widths=c(1,1,2)))
+    ((stage_plot | lobe_plot | pleura_plot) +
+       plot_layout(guides="collect", widths=c(1,1,2))) +
+      (subtype_plot +
+         plot_layout(guides="collect", widths=c(1,1,2)))
 ) +
   plot_annotation(tag_levels = "A") 
 
