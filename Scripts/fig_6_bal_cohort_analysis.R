@@ -1,3 +1,7 @@
+
+#------------------------------------------------------------------------------
+# library
+#------------------------------------------------------------------------------
 library(data.table)
 library(tidyr)
 library(ggplot2)
@@ -6,6 +10,10 @@ library(dplyr)
 library(patchwork)
 library(cowplot)
 library(ggpubr)
+
+#------------------------------------------------------------------------------
+# Figure 6: BAL Cohort Analysis
+#------------------------------------------------------------------------------
 
 bal_data = readxl::read_xlsx("../Cohort_data/BAL_nanostringdata.xlsx")
 bal_cohort_info = fread("../Cohort_data/BAL_Cohort.csv") %>%
@@ -248,5 +256,5 @@ figure_6 <- ( ((plot_spacer() | spearman_dataset_result) + plot_layout(widths=c(
     correlation_plots / 
     (plot_spacer() | pathway_enrichment_plot) ) +
   plot_layout(heights=c(2,2,2))
-
+#ggsave("figure_6_bal_cohort_analysis.png",figure_6,width=20,height=12)
 

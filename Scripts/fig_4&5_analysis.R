@@ -1,3 +1,7 @@
+
+#------------------------------------------------------------------------------
+# library
+#------------------------------------------------------------------------------
 library(data.table)
 library(tidyr)
 library(ggplot2)
@@ -7,7 +11,9 @@ library(cowplot)
 library(patchwork)
 library(broom)
 
+#------------------------------------------------------------------------------
 # Never-Smoking Cohort - FIGURE 4 Analysis
+#------------------------------------------------------------------------------
 shade_data = fread("../Cohort_data/Never_smoking_Cohort.csv") %>%
   janitor::clean_names() %>%
   mutate(birth_region = ifelse(birth_continent%in%c("Asia"),birth_continent,"Other")) %>%
@@ -52,7 +58,6 @@ var_res_df = bind_rows(var_res_df)
 # Combining all analyses and multiple test correction
 all_res_df = bind_rows(num_res_df,var_res_df)
 all_res_df$p.adj = p.adjust(all_res_df$p.value,method="BH")
-
 
 # Plotting
 birth_region_plot = shade_for_analysis %>%
@@ -295,20 +300,25 @@ suppl_figure <- (((pm25_3yr_plot | egfr_plot | ethnicity_plot) +
 ) +
   plot_annotation(tag_levels = "A") 
 
+#------------------------------------------------------------------------------
 #  Smoking Cohort - FIGURE 5 Analysis
-ever_smoker_data_df = fread("data/Smoking_Cohort.csv") %>%
-  janitor::clean_names() %>%
-  mutate(smoking_status = smoking) %>%
-  select(slide_id,age,sex,pack_year,smoking_status,upper_vs_lower,anth_percent)
+#------------------------------------------------------------------------------
 
-never_smoker_df = shade_data_no_outlier %>% 
+ever_smoker_data_df = fread("../Cohort_data/Smoking_Cohort.csv") %>%
+  janitor::clean_names() %>%
+  mutate(smoking_status = 'smoking') %>%
+  select(study_id,age,sex,pack_year,smoking_status,lobe_sampled,anth_percent)
+
+never_smoker_df = shade_for_analysis %>% 
   mutate(pack_year=NA) %>%
-  select(slide_id,age,sex,pack_year,smoking_status,upper_vs_lower,anth_percent)
+  select(study_id,age,sex,pack_year,smoking_status,upper_vs_lower,anth_percent)
 
 comb_df = bind_rows(ever_smoker_data_df,never_smoker_df)
 
 ever_never_smoker_plot = comb_df %>%
-  mutate(smoking_status=ifelse(smoking_status%in%c("current","former"),"ever","never")) %>%
+  mutate(smoking_status=ifelse(smoking_status%in%c("current","former",
+                                                   "smoking"),
+                               "ever","never")) %>%
   ggplot(aes(x=smoking_status,y=anth_percent)) +
   ggbeeswarm::geom_quasirandom() +
   theme_cowplot() +
